@@ -1,69 +1,71 @@
-﻿using MusicService.Models;
-using MusicService.Services.Abstract;
-using Newtonsoft.Json;
-using StackExchange.Redis;
+﻿//using MusicService.Models;
+//using MusicService.Services.Abstract;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Threading.Tasks;
 
-namespace MusicService.Services.Concrete
-{
-    public class MusicService : IMusicService
-    {
-        static readonly ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("redis-15545.c9.us-east-1-4.ec2.redns.redis-cloud.com:15545,password=PiIMxwEexnZiw5Ta3NQW5YCfkYCNEWYZ");
-        private readonly IDatabase _db;
+//namespace MusicService.Services
+//{
+//    public class MusicService : IMusicService
+//    {
+//        private readonly List<Music> _musicList = new(); // Replace with your actual data store
 
-        public MusicService(IConnectionMultiplexer redis)
-        {
-            _db = redis.GetDatabase();
-        }
+//        public async Task<IEnumerable<Music>> GetAllMusicAsync()
+//        {
+//            return await Task.FromResult(_musicList);
+//        }
 
-        public async Task<IEnumerable<Music>> GetAllMusicAsync()
-        {
-            var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
-            var musicList = new List<Music>();
+//        public async Task<Music> GetMusicByIdAsync(string id)
+//        {
+//            var music = _musicList.FirstOrDefault(m => m.Id == id);
+//            return await Task.FromResult(music);
+//        }
 
-            foreach (var key in keys)
-            {
-                var musicData = await _db.StringGetAsync(key);
-                if (musicData.HasValue)
-                {
-                    musicList.Add(JsonConvert.DeserializeObject<Music>(musicData));
-                }
-            }
-            return musicList;
-        }
+//        public async Task<IEnumerable<Music>> GetMusicByUserIdAsync(string userId)
+//        {
+//            var musicList = _musicList.Where(m => m.UserId == userId);
+//            return await Task.FromResult(musicList);
+//        }
 
-        public async Task<Music> GetMusicByIdAsync(string id)
-        {
-            var musicData = await _db.StringGetAsync($"music:{id}");
-            return musicData.HasValue ? JsonConvert.DeserializeObject<Music>(musicData) : null;
-        }
+//        public async Task AddMusicAsync(Music music, IFormFile musicFile)
+//        {
+//            // Handle file upload logic here
 
-        public async Task AddMusicAsync(Music music)
-        {
-            music.Id = Guid.NewGuid().ToString();
-            var musicData = JsonConvert.SerializeObject(music);
-            await _db.StringSetAsync($"music:{music.Id}", musicData);
-        }
+//            _musicList.Add(music);
+//            await Task.CompletedTask;
+//        }
 
-        public async Task UpdateMusicAsync(Music music)
-        {
-            var musicData = JsonConvert.SerializeObject(music);
-            await _db.StringSetAsync($"music:{music.Id}", musicData);
-        }
+//        public async Task UpdateMusicAsync(Music music)
+//        {
+//            var existingMusic = _musicList.FirstOrDefault(m => m.Id == music.Id);
+//            if (existingMusic != null)
+//            {
+//                existingMusic.Author = music.Author;
+//                existingMusic.Title = music.Title;
+//                existingMusic.Description = music.Description;
+//                // Update other properties as needed
+//            }
+//            await Task.CompletedTask;
+//        }
 
-        public async Task DeleteMusicAsync(string id)
-        {
-            await _db.KeyDeleteAsync($"music:{id}");
-        }
+//        public async Task DeleteMusicAsync(string id)
+//        {
+//            var music = _musicList.FirstOrDefault(m => m.Id == id);
+//            if (music != null)
+//            {
+//                _musicList.Remove(music);
+//            }
+//            await Task.CompletedTask;
+//        }
 
-        public async Task IncrementLikeCountAsync(string id)
-        {
-            var musicData = await _db.StringGetAsync($"music:{id}");
-            if (musicData.HasValue)
-            {
-                var music = JsonConvert.DeserializeObject<Music>(musicData);
-                music.LikeCount++;
-                await _db.StringSetAsync($"music:{music.Id}", JsonConvert.SerializeObject(music));
-            }
-        }
-    }
-}
+//        public async Task IncrementLikeCountAsync(string id)
+//        {
+//            var music = _musicList.FirstOrDefault(m => m.Id == id);
+//            if (music != null)
+//            {
+//                music.LikeCount++;
+//            }
+//            await Task.CompletedTask;
+//        }
+//    }
+//}

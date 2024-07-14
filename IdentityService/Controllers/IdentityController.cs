@@ -118,7 +118,8 @@ namespace IdentityService.Controllers
                     await _userManager.UpdateAsync(user_);
 
                     var token = _jwtTokenService.GenerateToken(user_);
-                    return Ok(new { message = "Login successful", token });
+                    var userId = user_.Id;
+                    return Ok(new { message = "Login successful", token, userId});
                 }
                 else
                 {
@@ -181,6 +182,18 @@ namespace IdentityService.Controllers
             {
                 return BadRequest(new { message = "Something went wrong, please try again. " + ex.Message });
             }
+        }
+
+        [HttpGet("validate")]
+        public async Task<IActionResult> ValidateUser(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return Ok();
         }
     }
 }

@@ -1,18 +1,14 @@
 using MusicService.Services.Abstract;
 using MusicService.Services;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using MusicService.Models;
 using Newtonsoft.Json;
 
 namespace MusicService.Server
 {
-    using global::MusicService.Models;
-    using global::MusicService.Services.Abstract;
-    using Microsoft.AspNetCore.Builder;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Hosting;
-    using StackExchange.Redis;
-
     public class Program
     {
         public static void Main(string[] args)
@@ -20,6 +16,7 @@ namespace MusicService.Server
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddHttpClient();
             builder.Services.AddControllers();
 
             builder.Services.AddCors(options =>
@@ -33,23 +30,40 @@ namespace MusicService.Server
                     });
             });
 
-            // Adding services from the provided ConfigureServices method
+            // Configure JWT authentication
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.Authority = "https://localhost:7287"; // URL of your IdentityService
+                options.Audience = "MusicService"; // The audience value you set in your IdentityService
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("supersecretkey123")) // Replace with your actual secret key
+                };
+            });
+
+            // Register Redis connection and MusicService
             builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect("redis-15545.c9.us-east-1-4.ec2.redns.redis-cloud.com:15545,password=PiIMxwEexnZiw5Ta3NQW5YCfkYCNEWYZ"));
             builder.Services.AddScoped<IMusicService, MusicService>();
-            //builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddHostedService<RabbitMQConsumerService>();
+
             builder.Services.AddEndpointsApiExplorer();
-            //builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
-            //if (app.Environment.IsDevelopment())
-            //{
-            //    app.UseDeveloperExceptionPage();
-            //    app.UseSwagger();
-            //    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MusicApp v1"));
-            //}
-
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
             app.UseDefaultFiles();
             app.UseStaticFiles();
             app.UseHttpsRedirection();
@@ -58,7 +72,10 @@ namespace MusicService.Server
             // Apply the CORS policy
             app.UseCors("AllowReactApp");
 
+            // Apply authentication and authorization middleware
+            app.UseAuthentication();
             app.UseAuthorization();
+
             app.MapControllers();
             app.MapFallbackToFile("/index.html");
             app.Run();
@@ -128,6 +145,3 @@ namespace MusicService.Server
         }
     }
 }
-
-
-

@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using MusicService.Models;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Hosting.Server;
 
 namespace MusicService.Server
 {
@@ -29,6 +30,8 @@ namespace MusicService.Server
                                .AllowAnyHeader();
                     });
             });
+
+
 
             // Configure JWT authentication
             builder.Services.AddAuthentication(options =>
@@ -91,7 +94,101 @@ namespace MusicService.Server
         public MusicService(IConnectionMultiplexer redis)
         {
             _db = redis.GetDatabase();
+
         }
+
+        //public async Task<IEnumerable<Music>> GetAllMusicAsync()
+        //{
+        //    var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
+        //    var musicList = new List<Music>();
+
+        //    foreach (var key in keys)
+        //    {
+        //        var musicData = await _db.StringGetAsync(key);
+        //        if (musicData.HasValue)
+        //        {
+        //            musicList.Add(JsonConvert.DeserializeObject<Music>(musicData));
+        //        }
+        //    }
+        //    return musicList;
+        //}
+
+        //public async Task<IEnumerable<Music>> GetAllMusicAsync()
+        //{
+        //    var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
+        //    var musicList = new List<Music>();
+
+        //    foreach (var key in keys)
+        //    {
+        //        Console.WriteLine($"Key: {key}");
+        //        var musicData = await _db.StringGetAsync(key);
+        //        if (musicData.HasValue)
+        //        {
+        //            Console.WriteLine($"Music Data: {musicData}");
+        //            try
+        //            {
+        //                var music = JsonConvert.DeserializeObject<Music>(musicData);
+        //                if (music != null)
+        //                {
+        //                    musicList.Add(music);
+        //                }
+        //                else
+        //                {
+        //                    Console.WriteLine("Deserialized music is null.");
+        //                }
+        //            }
+        //            catch (JsonSerializationException ex)
+        //            {
+        //                Console.WriteLine($"Error deserializing music data: {ex.Message}");
+        //            }
+        //        }
+        //        else
+        //        {
+        //            Console.WriteLine("No value for this key.");
+        //        }
+        //    }
+
+        //    Console.WriteLine($"Total music items retrieved: {musicList.Count}");
+        //    return musicList;
+        //}
+
+
+
+        //public async Task<IEnumerable<Music>> GetAllMusicAsync()
+        //{
+        //    var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
+        //    var musicList = new List<Music>();
+
+        //    foreach (var key in keys)
+        //    {
+        //        var musicData = await _db.StringGetAsync(key);
+        //        if (musicData.HasValue)
+        //        {
+        //            musicList.Add(JsonConvert.DeserializeObject<Music>(musicData));
+        //        }
+        //    }
+        //    return musicList;
+        //}
+
+
+
+        //public async Task<IEnumerable<Music>> GetAllMusicAsync()
+        //{
+        //    var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
+        //    var musicList = new List<Music>(); 
+
+        //    foreach(var key in keys)
+        //    {
+        //        var musicData = await _db.StringGetAsync(key);
+        //        if (musicData.HasValue)
+        //        {
+        //            var music = JsonConvert.DeserializeObject<Music>(musicData.ToString()); // Convert RedisValue to string
+        //            musicList.Add(music);
+        //        }
+        //    }
+        //    return musicList;
+        //}
+
 
         public async Task<IEnumerable<Music>> GetAllMusicAsync()
         {
@@ -103,10 +200,30 @@ namespace MusicService.Server
                 var musicData = await _db.StringGetAsync(key);
                 if (musicData.HasValue)
                 {
-                    musicList.Add(JsonConvert.DeserializeObject<Music>(musicData));
+                    try
+                    {
+                        var music = JsonConvert.DeserializeObject<Music>(musicData.ToString());
+                        if (music != null && IsValidMusic(music))
+                        {
+                            musicList.Add(music);
+                        }
+                    }
+                    catch (JsonException ex)
+                    {
+                        // Log the exception or handle it as needed
+                        Console.WriteLine($"Error deserializing key {key}: {ex.Message}");
+                    }
                 }
             }
+
             return musicList;
+        }
+
+        private bool IsValidMusic(Music music)
+        {
+            // Perform necessary validation to ensure the music object has valid properties
+            // Example validation:
+            return !string.IsNullOrEmpty(music.Title) && !string.IsNullOrEmpty(music.Author);
         }
 
         public async Task<Music> GetMusicByIdAsync(string id)
@@ -115,6 +232,13 @@ namespace MusicService.Server
             return musicData.HasValue ? JsonConvert.DeserializeObject<Music>(musicData) : null;
         }
 
+        //public async Task AddMusicAsync(Music music)
+        //{
+        //    music.Id = Guid.NewGuid().ToString();
+        //    var musicData = JsonConvert.SerializeObject(music);
+        //    await _db.StringSetAsync($"music:{music.Id}", musicData);
+        //}
+
         public async Task AddMusicAsync(Music music)
         {
             music.Id = Guid.NewGuid().ToString();
@@ -122,16 +246,28 @@ namespace MusicService.Server
             await _db.StringSetAsync($"music:{music.Id}", musicData);
         }
 
+
         public async Task UpdateMusicAsync(Music music)
         {
             var musicData = JsonConvert.SerializeObject(music);
             await _db.StringSetAsync($"music:{music.Id}", musicData);
         }
 
+        //public async Task DeleteMusicAsync(string id)
+        //{
+        //    await _db.KeyDeleteAsync($"music:{id}");
+        //}
+
         public async Task DeleteMusicAsync(string id)
         {
+            if (string.IsNullOrEmpty(id))
+            {
+                throw new ArgumentException("Invalid music id", nameof(id));
+            }
+
             await _db.KeyDeleteAsync($"music:{id}");
         }
+
 
         public async Task IncrementLikeCountAsync(string id)
         {

@@ -17,4 +17,8 @@
     <ProjectReference Include="..\IdentityService\IdentityService.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\Concrete\" />
+  </ItemGroup>
+
 </Project>

@@ -50,12 +50,149 @@ namespace MusicService.Controllers
         //    return Ok(musicList);
         //}
 
+        //[HttpPost("AddMusic")]
+        //public async Task<IActionResult> AddMusic([FromForm] Music music, [FromForm] IFormFile musicFile)
+        //{
+        //    await _musicService.AddMusicAsync(music);
+        //    return CreatedAtAction(nameof(GetMusicById), new { id = music.Id }, music);
+        //}
+
+        //[HttpPost("AddMusic")]
+        //public async Task<IActionResult> AddMusic([FromForm] Music music, [FromForm] IFormFile musicFile, [FromForm] IFormFile imageFile)
+        //{
+        //    if (musicFile != null && imageFile != null)
+        //    {
+        //        var musicFilePath = Path.Combine("MusicFiles", Guid.NewGuid().ToString() + Path.GetExtension(musicFile.FileName));
+        //        var imageFilePath = Path.Combine("MusicImages", Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName));
+
+        //        using (var stream = new FileStream(musicFilePath, FileMode.Create))
+        //        {
+        //            await musicFile.CopyToAsync(stream);
+        //        }
+
+        //        using (var stream = new FileStream(imageFilePath, FileMode.Create))
+        //        {
+        //            await imageFile.CopyToAsync(stream);
+        //        }
+
+        //        //music.FilePath = musicFilePath;
+        //        music.ImagePath = imageFilePath;
+        //    }
+
+        //    await _musicService.AddMusicAsync(music);
+        //    return CreatedAtAction(nameof(GetMusicById), new { id = music.Id }, music);
+        //}
+
+
+
+
+        //[HttpPost("AddMusic")]
+        //public async Task<IActionResult> AddMusic([FromForm] Music music, [FromForm] IFormFile musicFile, [FromForm] IFormFile imageFile)
+        //{
+        //    if (musicFile == null || imageFile == null)
+        //    {
+        //        return BadRequest("Music file and image file are required.");
+        //    }
+
+        //    try
+        //    {
+        //        // Ensure the directories exist
+        //        var musicDirectory = Path.Combine("MusicFiles");
+        //        var imageDirectory = Path.Combine("MusicImages");
+
+        //        if (!Directory.Exists(musicDirectory))
+        //        {
+        //            Directory.CreateDirectory(musicDirectory);
+        //        }
+
+        //        if (!Directory.Exists(imageDirectory))
+        //        {
+        //            Directory.CreateDirectory(imageDirectory);
+        //        }
+
+        //        var musicFilePath = Path.Combine(musicDirectory, Guid.NewGuid().ToString() + Path.GetExtension(musicFile.FileName));
+        //        var imageFilePath = Path.Combine(imageDirectory, Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName));
+
+        //        using (var musicStream = new FileStream(musicFilePath, FileMode.Create))
+        //        {
+        //            await musicFile.CopyToAsync(musicStream);
+        //        }
+
+        //        using (var imageStream = new FileStream(imageFilePath, FileMode.Create))
+        //        {
+        //            await imageFile.CopyToAsync(imageStream);
+        //        }
+
+        //        music.FilePath = musicFilePath;
+        //        music.ImagePath = imageFilePath;
+
+        //        await _musicService.AddMusicAsync(music);
+        //        return CreatedAtAction(nameof(GetMusicById), new { id = music.Id }, music);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log the exception
+        //        // Example: _logger.LogError(ex, "An error occurred while adding music.");
+
+        //        return StatusCode(500, $"Internal server error: {ex.Message}");
+        //    }
+        //}
+
+
         [HttpPost("AddMusic")]
-        public async Task<IActionResult> AddMusic([FromForm] Music music, [FromForm] IFormFile musicFile)
+        public async Task<IActionResult> AddMusic([FromForm] Music music, [FromForm] IFormFile musicFile, [FromForm] IFormFile imageFile)
         {
-            await _musicService.AddMusicAsync(music);
-            return CreatedAtAction(nameof(GetMusicById), new { id = music.Id }, music);
+            if (musicFile == null || imageFile == null)
+            {
+                return BadRequest("Music file and image file are required.");
+            }
+
+            try
+            {
+                // Ensure the directories exist
+                var musicDirectory = Path.Combine("MusicFiles");
+                var imageDirectory = Path.Combine("MusicImages");
+
+                if (!Directory.Exists(musicDirectory))
+                {
+                    Directory.CreateDirectory(musicDirectory);
+                }
+
+                if (!Directory.Exists(imageDirectory))
+                {
+                    Directory.CreateDirectory(imageDirectory);
+                }
+
+                var musicFilePath = Path.Combine(musicDirectory, Guid.NewGuid().ToString() + Path.GetExtension(musicFile.FileName));
+                var imageFilePath = Path.Combine(imageDirectory, Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName));
+
+                using (var musicStream = new FileStream(musicFilePath, FileMode.Create))
+                {
+                    await musicFile.CopyToAsync(musicStream);
+                }
+
+                using (var imageStream = new FileStream(imageFilePath, FileMode.Create))
+                {
+                    await imageFile.CopyToAsync(imageStream);
+                }
+
+                music.Id = Guid.NewGuid().ToString();
+                music.MusicFile = null; // We don't need to store the file itself, just the path
+                music.ImagePath = imageFilePath;
+
+                await _musicService.AddMusicAsync(music);
+                return CreatedAtAction(nameof(GetMusicById), new { id = music.Id }, music);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                // Example: _logger.LogError(ex, "An error occurred while adding music.");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
+
+
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMusic(string id, [FromBody] Music music)
@@ -91,5 +228,13 @@ namespace MusicService.Controllers
             await _musicService.IncrementLikeCountAsync(id);
             return NoContent();
         }
+
+        [HttpPost("{id}/dislike")]
+        public async Task<IActionResult> DecrementLikeCount(string id)
+        {
+            await _musicService.DecrementLikeCountAsync(id);
+            return NoContent();
+        }
+
     }
 }

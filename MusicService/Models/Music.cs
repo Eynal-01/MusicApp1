@@ -10,13 +10,9 @@ namespace MusicService.Models
         public string? Description { get; set; }
         public string? UserId { get; set; } // Add this property
         //public string? FilePath { get; set; } // Path to the music file
+        public string? ImagePath { get; set; }
         public int LikeCount { get; set; }
         [JsonIgnore]
         public IFormFile? MusicFile { get; set; } // The actual uploaded file
     }
-
-
-
-
-
 }

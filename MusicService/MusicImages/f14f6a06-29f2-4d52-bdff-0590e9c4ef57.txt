@@ -1,0 +1,10 @@
+Player id,name,surname,score,teamId
+Players 
+3 elementli list
+ 
+GetById
+GetAll
+GetByTeamId
+Add
+Update
+Delete

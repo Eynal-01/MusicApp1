@@ -246,6 +246,7 @@ namespace MusicService.Server
             await _db.StringSetAsync($"music:{music.Id}", musicData);
         }
 
+     
 
         public async Task UpdateMusicAsync(Music music)
         {
@@ -277,6 +278,22 @@ namespace MusicService.Server
                 var music = JsonConvert.DeserializeObject<Music>(musicData);
                 music.LikeCount++;
                 await _db.StringSetAsync($"music:{music.Id}", JsonConvert.SerializeObject(music));
+            }
+        }
+
+        public async Task DecrementLikeCountAsync(string id)
+        {
+            // Fetch the music object
+            var musicJson = await _db.StringGetAsync($"music:{id}");
+            if (musicJson.IsNullOrEmpty)
+                throw new KeyNotFoundException("Music not found.");
+
+            var music = JsonConvert.DeserializeObject<Music>(musicJson);
+            if (music != null && music.LikeCount > 0)
+            {
+                music.LikeCount--;
+                var updatedMusicJson = JsonConvert.SerializeObject(music);
+                await _db.StringSetAsync($"music:{id}", updatedMusicJson);
             }
         }
     }

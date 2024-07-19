@@ -42,5 +42,6 @@ namespace MusicService.Services.Abstract
         Task UpdateMusicAsync(Music music);
         Task DeleteMusicAsync(string id);
         Task IncrementLikeCountAsync(string id);
+        Task DecrementLikeCountAsync(string id);
     }
 }

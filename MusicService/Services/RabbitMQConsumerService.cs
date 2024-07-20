@@ -4,6 +4,7 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 public class RabbitMQConsumerService : BackgroundService
@@ -15,10 +16,9 @@ public class RabbitMQConsumerService : BackgroundService
     public RabbitMQConsumerService()
     {
         var factory = new ConnectionFactory();
-        factory.Uri = new Uri("amqps://nfazpmyg:qr95LfbgexB79kOgS3wfrJrBZ4Yv0_IB@cow.rmq2.cloudamqp.com/nfazpmyg");
-
-        _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
+        factory.Uri = new Uri("amqps://bapxqdms:KkoMA2EBEcjnMEaub7vIbnp_Av3mswDk@cow.rmq2.cloudamqp.com/bapxqdms");
+        var connection = factory.CreateConnection();
+        _channel = connection.CreateModel();
 
         _channel.ExchangeDeclare(exchange: "logs", type: ExchangeType.Fanout);
         _channel.QueueDeclare(queue: _queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
@@ -34,7 +34,7 @@ public class RabbitMQConsumerService : BackgroundService
             // Process the message
             Console.WriteLine("Received message: " + message);
         };
-        _channel.BasicConsume(queue: _queueName, autoAck: true, consumer: consumer);
+        _channel.BasicConsume(_queueName, true, consumer);
 
         return Task.CompletedTask;
     }

@@ -22,7 +22,7 @@ namespace MusicService.Server
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowReactApp",
+                options.AddPolicy("AllowAllOrigins",
                     builder =>
                     {
                         builder.AllowAnyOrigin()
@@ -57,7 +57,7 @@ namespace MusicService.Server
             builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect("redis-15545.c9.us-east-1-4.ec2.redns.redis-cloud.com:15545,password=PiIMxwEexnZiw5Ta3NQW5YCfkYCNEWYZ"));
             builder.Services.AddScoped<IMusicService, MusicService>();
             builder.Services.AddHostedService<RabbitMQConsumerService>();
-
+            //builder.Services.AddHostedService<RabbitMQConsumerService>();
             builder.Services.AddEndpointsApiExplorer();
 
             var app = builder.Build();
@@ -73,7 +73,7 @@ namespace MusicService.Server
             app.UseRouting();
 
             // Apply the CORS policy
-            app.UseCors("AllowReactApp");
+            app.UseCors("AllowAllOrigins");
 
             // Apply authentication and authorization middleware
             app.UseAuthentication();
@@ -96,99 +96,6 @@ namespace MusicService.Server
             _db = redis.GetDatabase();
 
         }
-
-        //public async Task<IEnumerable<Music>> GetAllMusicAsync()
-        //{
-        //    var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
-        //    var musicList = new List<Music>();
-
-        //    foreach (var key in keys)
-        //    {
-        //        var musicData = await _db.StringGetAsync(key);
-        //        if (musicData.HasValue)
-        //        {
-        //            musicList.Add(JsonConvert.DeserializeObject<Music>(musicData));
-        //        }
-        //    }
-        //    return musicList;
-        //}
-
-        //public async Task<IEnumerable<Music>> GetAllMusicAsync()
-        //{
-        //    var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
-        //    var musicList = new List<Music>();
-
-        //    foreach (var key in keys)
-        //    {
-        //        Console.WriteLine($"Key: {key}");
-        //        var musicData = await _db.StringGetAsync(key);
-        //        if (musicData.HasValue)
-        //        {
-        //            Console.WriteLine($"Music Data: {musicData}");
-        //            try
-        //            {
-        //                var music = JsonConvert.DeserializeObject<Music>(musicData);
-        //                if (music != null)
-        //                {
-        //                    musicList.Add(music);
-        //                }
-        //                else
-        //                {
-        //                    Console.WriteLine("Deserialized music is null.");
-        //                }
-        //            }
-        //            catch (JsonSerializationException ex)
-        //            {
-        //                Console.WriteLine($"Error deserializing music data: {ex.Message}");
-        //            }
-        //        }
-        //        else
-        //        {
-        //            Console.WriteLine("No value for this key.");
-        //        }
-        //    }
-
-        //    Console.WriteLine($"Total music items retrieved: {musicList.Count}");
-        //    return musicList;
-        //}
-
-
-
-        //public async Task<IEnumerable<Music>> GetAllMusicAsync()
-        //{
-        //    var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
-        //    var musicList = new List<Music>();
-
-        //    foreach (var key in keys)
-        //    {
-        //        var musicData = await _db.StringGetAsync(key);
-        //        if (musicData.HasValue)
-        //        {
-        //            musicList.Add(JsonConvert.DeserializeObject<Music>(musicData));
-        //        }
-        //    }
-        //    return musicList;
-        //}
-
-
-
-        //public async Task<IEnumerable<Music>> GetAllMusicAsync()
-        //{
-        //    var keys = redis.GetServer(redis.GetEndPoints().First()).Keys(pattern: "music:*");
-        //    var musicList = new List<Music>(); 
-
-        //    foreach(var key in keys)
-        //    {
-        //        var musicData = await _db.StringGetAsync(key);
-        //        if (musicData.HasValue)
-        //        {
-        //            var music = JsonConvert.DeserializeObject<Music>(musicData.ToString()); // Convert RedisValue to string
-        //            musicList.Add(music);
-        //        }
-        //    }
-        //    return musicList;
-        //}
-
 
         public async Task<IEnumerable<Music>> GetAllMusicAsync()
         {
@@ -246,7 +153,7 @@ namespace MusicService.Server
             await _db.StringSetAsync($"music:{music.Id}", musicData);
         }
 
-     
+
 
         public async Task UpdateMusicAsync(Music music)
         {

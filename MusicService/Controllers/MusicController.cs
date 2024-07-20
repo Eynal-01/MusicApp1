@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MusicService.Models;
+using MusicService.NewFolder;
 using MusicService.Services.Abstract;
 using System.Linq;
 using System.Security.Claims;
@@ -194,13 +195,45 @@ namespace MusicService.Controllers
 
 
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMusic(string id, [FromBody] Music music)
+        //[HttpPut("UpdateMusic/{id}")]
+        //public async Task<IActionResult> UpdateMusic(string id, [FromBody] Music music)
+        //{
+        //    music.Id = id;
+        //    await _musicService.UpdateMusicAsync(music);
+        //    return NoContent();
+        //}
+        [HttpPut("UpdateMusic/{id}")]
+        public async Task<IActionResult> UpdateMusic(string id, [FromForm] UpdateMusicDto musicDto)
         {
-            music.Id = id;
+            var music = await _musicService.GetMusicByIdAsync(id);
+            if (music == null)
+            {
+                return NotFound();
+            }
+
+            music.Author = musicDto.Author;
+            music.Title = musicDto.Title;
+            music.Description = musicDto.Description;
+
+            // If file is provided, handle file update logic separately
+            if (musicDto.MusicFile != null)
+            {
+                // Handle music file update
+                // For simplicity, just logging here. You need to replace this with actual file handling logic
+                Console.WriteLine("Music file updated");
+            }
+
+            if (musicDto.ImageFile != null)
+            {
+                // Handle image file update
+                // For simplicity, just logging here. You need to replace this with actual file handling logic
+                Console.WriteLine("Image file updated");
+            }
+
             await _musicService.UpdateMusicAsync(music);
             return NoContent();
         }
+
 
         //[HttpDelete("deletemusic")]
         //public async Task<IActionResult> DeleteMusic(string id)
@@ -208,6 +241,8 @@ namespace MusicService.Controllers
         //    await _musicService.DeleteMusicAsync(id);
         //    return NoContent();
         //}
+
+
 
         [HttpDelete("deletemusic")]
         public async Task<IActionResult> DeleteMusic(string id)
